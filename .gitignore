@@ -1,1 +1,4 @@
-/test.ipynb
+test.ipynb
+.gitignore
+Envioronment/Parameters.py
+Envioronment/SpotAuthParams.py

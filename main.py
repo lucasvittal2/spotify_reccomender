@@ -1,18 +1,28 @@
 from pyspark.sql import SparkSession
-from pyspark import SparkFiles
-import warnings
-import sys
-sys.path.append('PreProcessing')
+from pyspark import  SparkContext
+
+
+from Utils.ProjectPathsSetup import ProjectPathsSetup
+from Envioronment.Parameters import *
+
+ProjectPathsSetup().add_project_paths(PROJECT_PATH)
 
 from PreProcessing.PreProcessingPerformer import PreProcessingPerformer
-warnings.filterwarnings("ignore")
+from Advising.MusicAdvisor import MusicAdvisor
 
-from Envioronment.Parameters import *
+
 from Utils.SparkFileReader import SparkFileReader
+
+
+sc  = SparkContext.getOrCreate()
+ProjectPathsSetup().add_scripts_to_spark(PROJECT_PATH, sc)
+
+
+
 spark = SparkSession.builder.appName("Recomendador Spark").getOrCreate()
 
 #deactivate logs
-spark.sparkContext.setLogLevel("ERROR")
+
 
 
 #readFile
@@ -32,8 +42,12 @@ inputCols = genres_data.drop(*['id','name','artists_song','artists']).columns
 genres_data_preprocessor = PreProcessingPerformer(stages = ['VECTOR_ASSEMBLER', 'STANDARD_SCALER', 'PCA_DIM_REDUCTION'], inputCols= inputCols, outputCol= 'preprocessed_features', to_dim= DIM_RED)
 genres_preprocessed_data = genres_data_preprocessor.process_data(genres_data)
 
-print(genres_preprocessed_data.select('preprocessed_features').show())
 
+# Advising musics
 
+musicAdvisor = MusicAdvisor(spark) 
 
-
+music_name = 'Ed Sheeran - Happier'
+recommended_musics = musicAdvisor.advise_musics(genres_preprocessed_data, music_name, 15)
+print(f"You were looking for {music_name}")
+print(recommended_musics.select(['id', 'artists_song','Dist']).show(truncate=False))

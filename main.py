@@ -1,6 +1,8 @@
+import ast
+import pandas as pd
 from pyspark.sql import SparkSession
 from pyspark import  SparkContext
-
+from pyspark.sql.functions import create_map, lit, col
 
 from Utils.ProjectPathsSetup import ProjectPathsSetup
 from Envioronment.Parameters import *
@@ -11,7 +13,7 @@ from PreProcessing.PreProcessingPerformer import PreProcessingPerformer
 from Advising.MusicAdvisor import MusicAdvisor
 from SpotifyAPI.SpotifyAPIHandler import SpotifyAPIHandler
 from Visuals.MusicVisualizator import MusicVisualizator
-
+from pyspark.ml.linalg import DenseVector
 
 from Utils.SparkFileReader import SparkFileReader
 
@@ -34,24 +36,17 @@ print("*"*150)
 print('reading files...')
 
 
-#readFile
-fileReader = SparkFileReader(spark_session = spark)
-data = fileReader.get_file(DATA_URL)
+#readFile and make adjustments to be read by spark jobs
+
+genres_preprocessed_data_pandas = pd.read_csv(DATA_PATH + 'preprocessed_data.csv', sep=';')
+genres_preprocessed_data_pandas['preprocessed_features'] = genres_preprocessed_data_pandas['preprocessed_features'].apply(lambda x: DenseVector(ast.literal_eval(x)))
+genres_preprocessed_data = spark.createDataFrame(genres_preprocessed_data_pandas)
 
 
-fileReader = SparkFileReader(spark_session = spark)
-genres_data = fileReader.get_file(DATA_URL_GENRES)
+
+
+
 print('Got files !\n')
-
-
-#PreProcess Data
-print("*"*150)
-
-print('PreProcessing data...')
-inputCols = genres_data.drop(*['id','name','artists_song','artists']).columns
-genres_data_preprocessor = PreProcessingPerformer(stages = ['VECTOR_ASSEMBLER', 'STANDARD_SCALER', 'PCA_DIM_REDUCTION'], inputCols= inputCols, outputCol= 'preprocessed_features', to_dim= DIM_RED)
-genres_preprocessed_data = genres_data_preprocessor.process_data(genres_data)
-print('Data PreProcessed\n')
 
 
 
@@ -78,7 +73,7 @@ ids = recommended_musics.select('id').rdd.flatMap(lambda x: x).collect()
 music_data = [ (url, name) for url,name in [spotifyApi.get_music_data(id) for id in ids] ]
 
 urls = [ data[0] for data in music_data]
-names = [ data[0] for data in music_data]
+names = [ data[1] for data in music_data]
 print('Got Music data from spotify!\n')
 print("*"*150)
 

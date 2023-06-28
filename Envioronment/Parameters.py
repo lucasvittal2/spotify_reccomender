@@ -8,7 +8,7 @@ DATA_URL_GENRES = 'https://github.com/IgorNascAlves/dados/blob/main/dados_musica
 
 #paths
 PROJECT_PATH = "C:/Users/lucas/Documents/data_science projects/Sistema Recomendacao Spotify/Code/"
-
+DATA_PATH = 'C:/Users/lucas/Documents/data_science projects/Sistema Recomendacao Spotify/Data/'
 
 #Parameter preprocessors
 
